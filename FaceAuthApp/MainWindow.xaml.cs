@@ -132,8 +132,13 @@ namespace FaceAuthApp
                         bitmapImage.StreamSource = ms;
                         bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
                         bitmapImage.EndInit();
+                        bitmapImage.Freeze();
+
+                        var mirrored = new TransformedBitmap(bitmapImage, new ScaleTransform(-1, 1));
+                        mirrored.Freeze();
+
                         if (_previewTarget != null)
-                            _previewTarget.Source = bitmapImage;
+                            _previewTarget.Source = mirrored;
                     }
                 }
                 catch { }
@@ -254,7 +259,16 @@ namespace FaceAuthApp
             RegisterStartCamBtn.Content = "🎥 Włącz Kamerę";
 
             _tempImagePath = capturePath;
-            RegisterFaceImage.Source = LoadImageSafely(capturePath);
+
+            var still = LoadImageSafely(capturePath);
+            if (still != null)
+            {
+                still.Freeze();
+                var mirroredStill = new TransformedBitmap(still, new ScaleTransform(-1, 1));
+                mirroredStill.Freeze();
+                RegisterFaceImage.Source = mirroredStill;
+            }
+
             RegisterResultText.Text = "Zdjęcie z kamery uchwycone.";
             RegisterResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#AAAAAA");
         }

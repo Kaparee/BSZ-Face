@@ -74,15 +74,18 @@
         <StackPanel x:Name="PanelLogin" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,60,0,0">
             <TextBlock Text="Autoryzacja z Kamery" Foreground="White" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
             
-            <ComboBox x:Name="CameraDevicesBox" Width="300" Margin="0,0,0,10" Background="#2B2B36" Foreground="Black" Padding="5"/>
+            <ComboBox x:Name="CameraDevicesBox" Width="300" HorizontalAlignment="Center" Margin="0,0,0,10" Background="#2B2B36" Foreground="Black" Padding="5"/>
             
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
                 <Button x:Name="StartCameraBtn" Content="🎥 Włącz Kamerę" Style="{StaticResource SecondaryButton}" Width="145" Margin="0,0,5,0" Click="StartCameraBtn_Click"/>
                 <Button x:Name="LoadDiskPhotoBtn" Content="📁 Wgraj z dysku" Style="{StaticResource SecondaryButton}" Width="145" Margin="5,0,0,0" Click="LoadDiskPhotoBtn_Click"/>
             </StackPanel>
 
-            <Border Background="#1A1A24" CornerRadius="12" Margin="0,0,0,15" BorderBrush="#3A86FF" BorderThickness="2" ClipToBounds="True" Height="220" Width="300">
+            <Border Background="#1A1A24" CornerRadius="12" Margin="0,0,0,15" HorizontalAlignment="Center" BorderBrush="#3A86FF" BorderThickness="2" ClipToBounds="True" Height="180" Width="300">
                 <Grid>
+                    <Grid.Clip>
+                        <RectangleGeometry Rect="0,0,296,176" RadiusX="10" RadiusY="10"/>
+                    </Grid.Clip>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="0">
                         <TextBlock Text="🎥" FontSize="40" Foreground="#444455" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="Kamera Wyłączona" Foreground="#666677" FontSize="14" HorizontalAlignment="Center"/>
@@ -91,11 +94,11 @@
                 </Grid>
             </Border>
             
-            <Button x:Name="LoginScanBtn" Content="📸 Uchwyć twarz i autoryzuj" Style="{StaticResource PrimaryButton}" Height="45" Width="300" Click="LoginScan_Click" Margin="0,0,0,15" IsEnabled="False"/>
-            
-            <ProgressBar x:Name="LoginProgress" Height="4" Width="300" Margin="0,0,0,15" IsIndeterminate="True" Foreground="#3A86FF" Background="#2B2B36" Visibility="Collapsed"/>
-            
-            <TextBlock x:Name="LoginResultText" Text="System w gotowości. Włącz kamerę." Foreground="#AAAAAA" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Width="300"/>
+            <Button x:Name="LoginScanBtn" Content="📸 Uchwyć twarz i autoryzuj" Style="{StaticResource PrimaryButton}" Height="45" Width="300" HorizontalAlignment="Center" Click="LoginScan_Click" Margin="0,0,0,15" IsEnabled="False"/>
+
+            <ProgressBar x:Name="LoginProgress" Height="4" Width="300" HorizontalAlignment="Center" Margin="0,0,0,15" IsIndeterminate="True" Foreground="#3A86FF" Background="#2B2B36" Visibility="Collapsed"/>
+
+            <TextBlock x:Name="LoginResultText" Text="System w gotowości. Włącz kamerę." Foreground="#AAAAAA" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Width="300" HorizontalAlignment="Center"/>
             
             <Button Content="Powrót do menu" Style="{StaticResource SecondaryButton}" Width="150" Margin="0,30,0,0" Click="BackToMenu_Click"/>
         </StackPanel>
@@ -113,12 +116,15 @@
                 <Button x:Name="RegisterCaptureBtn" Content="📸 Uchwyć" Style="{StaticResource SecondaryButton}" Width="145" Margin="5,0,0,0" Click="RegisterCaptureBtn_Click" IsEnabled="False"/>
             </StackPanel>
 
-            <Border Background="#2B2B36" CornerRadius="12" Margin="0,0,0,15" BorderBrush="#333340" BorderThickness="2" ClipToBounds="True" Height="180" Width="300">
+            <Border Background="#2B2B36" CornerRadius="12" Margin="0,0,0,15" HorizontalAlignment="Center" BorderBrush="#333340" BorderThickness="2" ClipToBounds="True" Height="180" Width="300">
                 <Grid>
+                    <Grid.Clip>
+                        <RectangleGeometry Rect="0,0,296,176" RadiusX="10" RadiusY="10"/>
+                    </Grid.Clip>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="0">
                         <TextBlock Text="📷" FontSize="30" Foreground="#444455" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                     </StackPanel>
-                    <Image x:Name="RegisterFaceImage" Stretch="Uniform" Panel.ZIndex="1"/>
+                    <Image x:Name="RegisterFaceImage" Stretch="UniformToFill" Panel.ZIndex="1"/>
                 </Grid>
             </Border>
             
