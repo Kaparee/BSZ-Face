@@ -145,6 +145,12 @@ namespace FaceAuthApp
             });
         }
 
+        private void SecurityLevelSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (SecurityLevelLabel != null)
+                SecurityLevelLabel.Text = $"Poziom bezpieczeństwa (Threshold): {Math.Round(e.NewValue)}%";
+        }
+
         private void ShowLoginPanel_Click(object sender, RoutedEventArgs e)
         {
             PanelMenu.Visibility = Visibility.Collapsed;
@@ -290,7 +296,7 @@ namespace FaceAuthApp
 
             try
             {
-                string targetFolder = Path.Combine(Environment.CurrentDirectory, "Dane", name.Replace(" ", "_"));
+                string targetFolder = Path.Combine(GetAppRoot(), "Dane", name.Replace(" ", "_"));
                 Directory.CreateDirectory(targetFolder);
                 string targetFile = Path.Combine(targetFolder, "ref_" + Path.GetFileName(imagePath));
                 File.Copy(imagePath, targetFile, true);
@@ -313,11 +319,23 @@ namespace FaceAuthApp
             RegisterSubmitBtn.IsEnabled = true;
         }
 
+        private string GetAppRoot()
+        {
+            string current = AppDomain.CurrentDomain.BaseDirectory;
+            while (current != null)
+            {
+                if (System.IO.File.Exists(System.IO.Path.Combine(current, "FaceAuthApp.csproj")))
+                    return current;
+                current = System.IO.Directory.GetParent(current)?.FullName;
+            }
+            return AppDomain.CurrentDomain.BaseDirectory;
+        }
+
         private void AppendAuditLog(string result, float score, string message)
         {
             try
             {
-                string logFile = Path.Combine(Environment.CurrentDirectory, "Security_Audit.log");
+                string logFile = Path.Combine(GetAppRoot(), "Security_Audit.log");
                 string logLine = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] STATUS: {result} | SCORE: {score:P2} | MSG: {message}{Environment.NewLine}";
                 File.AppendAllText(logFile, logLine);
             }
@@ -328,7 +346,7 @@ namespace FaceAuthApp
         {
             try
             {
-                string intrudersDir = Path.Combine(Environment.CurrentDirectory, "Zagrożenia");
+                string intrudersDir = Path.Combine(GetAppRoot(), "Zagrożenia");
                 Directory.CreateDirectory(intrudersDir);
                 string intruderFile = Path.Combine(intrudersDir, $"INTRUZ_{DateTime.Now:yyyyMMdd_HHmmss}.jpg");
                 File.Copy(imagePath, intruderFile, true);
@@ -339,6 +357,7 @@ namespace FaceAuthApp
         private async void LoginScan_Click(object sender, RoutedEventArgs e)
         {
             string capturedImagePath = "";
+            bool isLivenessPassed = true;
 
             if (!string.IsNullOrEmpty(_loadedDiskImagePath))
             {
@@ -347,22 +366,55 @@ namespace FaceAuthApp
             else
             {
                 capturedImagePath = Path.Combine(Path.GetTempPath(), "neuro_secure_capture.jpg");
-                lock (_frameLock)
+                
+                LoginResultText.Text = "Analiza żywotności (Anti-Spoofing)...";
+                LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FFAA00");
+                
+                int variance = 0;
+                Bitmap[] samples = new Bitmap[3];
+                for (int i = 0; i < 3; i++)
                 {
-                    if (_currentFrame != null)
-                    {
-                        _currentFrame.Save(capturedImagePath, ImageFormat.Jpeg);
-                    }
-                    else
-                    {
-                        MessageBox.Show("Nie udało się pobrać klatki z kamery.");
-                        return;
-                    }
+                    lock (_frameLock) { if (_currentFrame != null) samples[i] = (Bitmap)_currentFrame.Clone(); }
+                    await Task.Delay(300);
                 }
+                
+                if (samples[0] != null && samples[1] != null && samples[2] != null)
+                {
+                    int width = samples[0].Width;
+                    int height = samples[0].Height;
+                    for (int pt = 0; pt < 10; pt++)
+                    {
+                        int px = width / 2 + pt;
+                        int py = height / 2 + pt;
+                        if (px < width && py < height)
+                        {
+                            var c1 = samples[0].GetPixel(px, py);
+                            var c2 = samples[1].GetPixel(px, py);
+                            var c3 = samples[2].GetPixel(px, py);
+                            variance += Math.Abs(c1.R - c2.R) + Math.Abs(c2.R - c3.R);
+                            variance += Math.Abs(c1.G - c2.G) + Math.Abs(c2.G - c3.G);
+                            variance += Math.Abs(c1.B - c2.B) + Math.Abs(c2.B - c3.B);
+                        }
+                    }
+                    samples[0].Save(capturedImagePath, ImageFormat.Jpeg);
+                    samples[0].Dispose(); samples[1].Dispose(); samples[2].Dispose();
+                }
+
+                if (variance < 10) isLivenessPassed = false;
                 StopCamera(); 
             }
             
             LoginScanBtn.IsEnabled = false;
+
+            if (!isLivenessPassed)
+            {
+                LoginResultText.Text = "🚨 Zablokowano: Wykryto oszustwo (Statyczny Obraz).";
+                LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FF5555");
+                AppendAuditLog("DENIED", 0f, "Spoofing zablokowany - brak wariancji żywotności.");
+                LoginScanBtn.IsEnabled = true;
+                return;
+            }
+
             LoginProgress.Visibility = Visibility.Visible;
             LoginResultText.Text = "Analiza rysów twarzy na serwerze AI...";
             LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#3A86FF");
@@ -387,6 +439,8 @@ namespace FaceAuthApp
 
             LoginProgress.Visibility = Visibility.Collapsed;
 
+            float currentThreshold = (float)(SecurityLevelSlider.Value / 100.0);
+
             if (string.IsNullOrEmpty(predictedLabel))
             {
                 LoginResultText.Text = "🚨 Brak zarejestrowanych profili w bazie.";
@@ -394,7 +448,7 @@ namespace FaceAuthApp
 
                 AppendAuditLog("DENIED", score, "Brak profili - logowanie niemozliwe.");
             }
-            else if (score < FaceEngine.MatchThreshold)
+            else if (score < currentThreshold)
             {
                 LoginResultText.Text = "🚨 Odmowa dostępu. Nierozpoznano osoby.";
                 LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FF5555");

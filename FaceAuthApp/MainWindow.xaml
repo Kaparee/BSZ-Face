@@ -96,6 +96,9 @@
             
             <Button x:Name="LoginScanBtn" Content="📸 Uchwyć twarz i autoryzuj" Style="{StaticResource PrimaryButton}" Height="45" Width="300" HorizontalAlignment="Center" Click="LoginScan_Click" Margin="0,0,0,15" IsEnabled="False"/>
 
+            <TextBlock x:Name="SecurityLevelLabel" Text="Poziom bezpieczeństwa (Threshold): 60%" Foreground="#AAAAAA" HorizontalAlignment="Center"/>
+            <Slider x:Name="SecurityLevelSlider" Minimum="0" Maximum="100" Value="60" Width="300" Margin="0,5,0,15" ValueChanged="SecurityLevelSlider_ValueChanged"/>
+
             <ProgressBar x:Name="LoginProgress" Height="4" Width="300" HorizontalAlignment="Center" Margin="0,0,0,15" IsIndeterminate="True" Foreground="#3A86FF" Background="#2B2B36" Visibility="Collapsed"/>
 
             <TextBlock x:Name="LoginResultText" Text="System w gotowości. Włącz kamerę." Foreground="#AAAAAA" FontSize="16" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" Width="300" HorizontalAlignment="Center"/>
