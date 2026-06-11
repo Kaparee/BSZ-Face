@@ -22,6 +22,7 @@ namespace FaceAuthApp
         private VideoCaptureDevice _videoSource;
         private Bitmap _currentFrame;
         private readonly object _frameLock = new object();
+        private System.Windows.Controls.Image _previewTarget;
 
         public MainWindow()
         {
@@ -44,30 +45,39 @@ namespace FaceAuthApp
             StopCamera();
         }
 
-        private void LoadCameras()
+        private void LoadCameras(System.Windows.Controls.ComboBox target)
         {
             _videoDevices = new FilterInfoCollection(FilterCategory.VideoInputDevice);
-            CameraDevicesBox.Items.Clear();
+            target.Items.Clear();
             foreach (FilterInfo device in _videoDevices)
             {
-                CameraDevicesBox.Items.Add(device.Name);
+                target.Items.Add(device.Name);
             }
-            if (CameraDevicesBox.Items.Count > 0)
-                CameraDevicesBox.SelectedIndex = 0;
+            if (target.Items.Count > 0)
+                target.SelectedIndex = 0;
             else
-                CameraDevicesBox.Items.Add("Brak podłączonej kamery");
+                target.Items.Add("Brak podłączonej kamery");
+        }
+
+        private void StartCameraOn(System.Windows.Controls.Image target, int deviceIndex)
+        {
+            if (_videoDevices == null || _videoDevices.Count == 0) return;
+            if (deviceIndex < 0 || deviceIndex >= _videoDevices.Count) deviceIndex = 0;
+
+            StopCamera();
+            _loadedDiskImagePath = "";
+            _previewTarget = target;
+
+            _videoSource = new VideoCaptureDevice(_videoDevices[deviceIndex].MonikerString);
+            _videoSource.NewFrame += VideoSource_NewFrame;
+            _videoSource.Start();
         }
 
         private void StartCameraBtn_Click(object sender, RoutedEventArgs e)
         {
             if (_videoDevices == null || _videoDevices.Count == 0) return;
 
-            StopCamera();
-            _loadedDiskImagePath = "";
-            
-            _videoSource = new VideoCaptureDevice(_videoDevices[CameraDevicesBox.SelectedIndex].MonikerString);
-            _videoSource.NewFrame += VideoSource_NewFrame;
-            _videoSource.Start();
+            StartCameraOn(WebcamImage, CameraDevicesBox.SelectedIndex);
 
             LoginScanBtn.IsEnabled = true;
             StartCameraBtn.Content = "🎥 Kamera działa";
@@ -103,7 +113,7 @@ namespace FaceAuthApp
                 _currentFrame = (Bitmap)eventArgs.Frame.Clone();
             }
 
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
                 try
                 {
@@ -122,7 +132,8 @@ namespace FaceAuthApp
                         bitmapImage.StreamSource = ms;
                         bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
                         bitmapImage.EndInit();
-                        WebcamImage.Source = bitmapImage;
+                        if (_previewTarget != null)
+                            _previewTarget.Source = bitmapImage;
                     }
                 }
                 catch { }
@@ -135,7 +146,8 @@ namespace FaceAuthApp
             PanelRegister.Visibility = Visibility.Collapsed;
             PanelLogin.Visibility = Visibility.Visible;
             
-            LoadCameras();
+            _previewTarget = null;
+            LoadCameras(CameraDevicesBox);
             WebcamImage.Source = null;
             LoginScanBtn.IsEnabled = false;
             StartCameraBtn.Content = "🎥 Włącz Kamerę";
@@ -150,11 +162,15 @@ namespace FaceAuthApp
             PanelLogin.Visibility = Visibility.Collapsed;
             PanelRegister.Visibility = Visibility.Visible;
             StopCamera();
-            
+            _previewTarget = null;
+
             RegisterNameBox.Text = "";
             RegisterFaceImage.Source = null;
             RegisterResultText.Text = "";
             _tempImagePath = "";
+            RegisterCaptureBtn.IsEnabled = false;
+            RegisterStartCamBtn.Content = "🎥 Włącz Kamerę";
+            LoadCameras(RegisterCameraBox);
         }
 
         private void BackToMenu_Click(object sender, RoutedEventArgs e)
@@ -186,11 +202,61 @@ namespace FaceAuthApp
 
             if (openFileDialog.ShowDialog() == true)
             {
+                StopCamera();
+                _previewTarget = null;
+                RegisterCaptureBtn.IsEnabled = false;
+
                 _tempImagePath = openFileDialog.FileName;
                 RegisterFaceImage.Source = LoadImageSafely(_tempImagePath);
                 RegisterResultText.Text = "Zdjęcie referencyjne wybrane.";
                 RegisterResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#AAAAAA");
             }
+        }
+
+        private void RegisterStartCamera_Click(object sender, RoutedEventArgs e)
+        {
+            if (_videoDevices == null || _videoDevices.Count == 0)
+            {
+                RegisterResultText.Text = "Brak podłączonej kamery.";
+                RegisterResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FF5555");
+                return;
+            }
+
+            _tempImagePath = "";
+            StartCameraOn(RegisterFaceImage, RegisterCameraBox.SelectedIndex);
+
+            RegisterCaptureBtn.IsEnabled = true;
+            RegisterStartCamBtn.Content = "🎥 Kamera działa";
+            RegisterResultText.Text = "Ustaw twarz i uchwyć zdjęcie.";
+            RegisterResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#AAAAAA");
+        }
+
+        private void RegisterCaptureBtn_Click(object sender, RoutedEventArgs e)
+        {
+            string capturePath = Path.Combine(Path.GetTempPath(), "neuro_register_capture.jpg");
+
+            lock (_frameLock)
+            {
+                if (_currentFrame != null)
+                {
+                    _currentFrame.Save(capturePath, ImageFormat.Jpeg);
+                }
+                else
+                {
+                    MessageBox.Show("Nie udało się pobrać klatki z kamery.");
+                    return;
+                }
+            }
+
+            StopCamera();
+            _previewTarget = null;
+            RegisterCaptureBtn.IsEnabled = false;
+            RegisterStartCamBtn.Content = "🎥 Włącz Kamerę";
+
+            _tempImagePath = capturePath;
+            RegisterFaceImage.Source = LoadImageSafely(capturePath);
+            RegisterResultText.Text = "Zdjęcie z kamery uchwycone.";
+            RegisterResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#AAAAAA");
         }
 
         private async void RegisterSubmit_Click(object sender, RoutedEventArgs e)
@@ -202,23 +268,33 @@ namespace FaceAuthApp
             }
 
             RegisterSubmitBtn.IsEnabled = false;
-            RegisterResultText.Text = "Przetwarzanie profilu...";
+            RegisterResultText.Text = "Przetwarzanie profilu biometrycznego...";
             RegisterResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#3A86FF");
 
-            await Task.Delay(1000);
+            string name = RegisterNameBox.Text.Trim();
+            string imagePath = _tempImagePath;
 
-            string targetFolder = Path.Combine(Environment.CurrentDirectory, "Dane", RegisterNameBox.Text.Replace(" ", "_"));
-            try 
+            try
             {
+                string targetFolder = Path.Combine(Environment.CurrentDirectory, "Dane", name.Replace(" ", "_"));
                 Directory.CreateDirectory(targetFolder);
-                string targetFile = Path.Combine(targetFolder, "ref_" + Path.GetFileName(_tempImagePath));
-                File.Copy(_tempImagePath, targetFile, true); 
-            } 
-            catch { }
+                string targetFile = Path.Combine(targetFolder, "ref_" + Path.GetFileName(imagePath));
+                File.Copy(imagePath, targetFile, true);
 
-            _lastRegisteredName = RegisterNameBox.Text;
+                await Task.Run(() => FaceEngine.RegisterProfile(name, imagePath));
+            }
+            catch (Exception ex)
+            {
+                RegisterResultText.Text = "⚠ Błąd zapisu profilu biometrycznego.";
+                RegisterResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FF5555");
+                AppendAuditLog("ERROR", 0f, "Rejestracja nieudana: " + ex.Message);
+                RegisterSubmitBtn.IsEnabled = true;
+                return;
+            }
 
-            RegisterResultText.Text = $"✅ Utworzono profil: '{RegisterNameBox.Text}'";
+            _lastRegisteredName = name;
+
+            RegisterResultText.Text = $"✅ Zapisano profil biometryczny: '{name}'";
             RegisterResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#00E676");
             RegisterSubmitBtn.IsEnabled = true;
         }
@@ -277,28 +353,46 @@ namespace FaceAuthApp
             LoginResultText.Text = "Analiza rysów twarzy na serwerze AI...";
             LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#3A86FF");
 
-            await Task.Delay(2500); 
+            float score;
+            string predictedLabel;
+            try
+            {
+                var match = await Task.Run(() => FaceEngine.Identify(capturedImagePath));
+                predictedLabel = match.Name.Replace("_", " ");
+                score = match.Score;
+            }
+            catch (Exception ex)
+            {
+                LoginProgress.Visibility = Visibility.Collapsed;
+                LoginResultText.Text = "⚠ Błąd analizy biometrycznej.";
+                LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FF5555");
+                AppendAuditLog("ERROR", 0f, "Wyjatek silnika: " + ex.Message);
+                LoginScanBtn.IsEnabled = true;
+                return;
+            }
 
             LoginProgress.Visibility = Visibility.Collapsed;
 
-            Random rnd = new Random();
-            float score = (float)rnd.NextDouble(); 
-            string predictedLabel = score > 0.20f ? _lastRegisteredName : "Nieznany Intruz"; 
-            score = score < 0.60f ? score + 0.30f : score;
+            if (string.IsNullOrEmpty(predictedLabel))
+            {
+                LoginResultText.Text = "🚨 Brak zarejestrowanych profili w bazie.";
+                LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FF5555");
 
-            if (score < 0.60f)
+                AppendAuditLog("DENIED", score, "Brak profili - logowanie niemozliwe.");
+            }
+            else if (score < FaceEngine.MatchThreshold)
             {
                 LoginResultText.Text = "🚨 Odmowa dostępu. Nierozpoznano osoby.";
                 LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#FF5555");
-                
-                AppendAuditLog("DENIED", score, "Próba fałszerstwa zablokowana.");
+
+                AppendAuditLog("DENIED", score, $"Najblizszy profil '{predictedLabel}' ponizej progu.");
                 SaveIntruderSnapshot(capturedImagePath);
             }
             else
             {
-                LoginResultText.Text = $"✅ Zalogowano: {predictedLabel} (Pewność: {score:P1})";
+                LoginResultText.Text = $"✅ Zalogowano: {predictedLabel} (Podobieństwo: {score:P1})";
                 LoginResultText.Foreground = (System.Windows.Media.Brush)new BrushConverter().ConvertFrom("#00E676");
-                
+
                 AppendAuditLog("GRANTED", score, $"Pomyślne logowanie użytkownika: {predictedLabel}.");
             }
         }

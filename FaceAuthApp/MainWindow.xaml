@@ -105,7 +105,14 @@
             
             <TextBlock Text="Imię i Nazwisko:" Foreground="#AAAAAA" Margin="0,0,0,5" Width="300" HorizontalAlignment="Center"/>
             <TextBox x:Name="RegisterNameBox" Background="#2B2B36" Foreground="White" BorderBrush="#444455" BorderThickness="1" FontSize="16" Padding="5" Width="300" Margin="0,0,0,15"/>
-            
+
+            <ComboBox x:Name="RegisterCameraBox" Width="300" Margin="0,0,0,10" Background="#2B2B36" Foreground="Black" Padding="5"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,10">
+                <Button x:Name="RegisterStartCamBtn" Content="🎥 Włącz Kamerę" Style="{StaticResource SecondaryButton}" Width="145" Margin="0,0,5,0" Click="RegisterStartCamera_Click"/>
+                <Button x:Name="RegisterCaptureBtn" Content="📸 Uchwyć" Style="{StaticResource SecondaryButton}" Width="145" Margin="5,0,0,0" Click="RegisterCaptureBtn_Click" IsEnabled="False"/>
+            </StackPanel>
+
             <Border Background="#2B2B36" CornerRadius="12" Margin="0,0,0,15" BorderBrush="#333340" BorderThickness="2" ClipToBounds="True" Height="180" Width="300">
                 <Grid>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Panel.ZIndex="0">
@@ -115,7 +122,7 @@
                 </Grid>
             </Border>
             
-            <Button Content="Wgraj referencyjne zdjęcie twarzy" Style="{StaticResource SecondaryButton}" Width="300" Height="35" Margin="0,0,0,15" Click="RegisterAddPhoto_Click"/>
+            <Button Content="📁 ...lub wgraj zdjęcie z dysku" Style="{StaticResource SecondaryButton}" Width="300" Height="35" Margin="0,0,0,15" Click="RegisterAddPhoto_Click"/>
             
             <Button x:Name="RegisterSubmitBtn" Content="Zapisz Profil" Style="{StaticResource PrimaryButton}" Height="45" Width="300" Click="RegisterSubmit_Click" Margin="0,0,0,10"/>
             <TextBlock x:Name="RegisterResultText" Text="" Foreground="#00E676" FontSize="14" FontWeight="SemiBold" TextAlignment="Center" Margin="0,0,0,15"/>
