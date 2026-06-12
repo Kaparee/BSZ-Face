@@ -1,0 +1,23 @@
+\chapter{Silnik Biometryczny i AI}
+
+Kluczem do wysokiej skuteczności programu jest wykorzystanie modelu głębokiej sieci neuronowej zapisanej w otwartym formacie \textbf{ONNX} (\textit{Open Neural Network Exchange}). W projekcie zaadaptowano pre-trenowany model \texttt{face\_sface.onnx}, stworzony specjalnie pod kątem ekstrakcji unikalnych cech fizjologicznych twarzy w zróżnicowanych warunkach oświetleniowych.
+
+\section{Przetwarzanie Potokowe (Pipeline)}
+W klasie \texttt{FaceEngine} zainicjalizowano potok przetwarzania obrazu (Machine Learning Pipeline). Aby surowa ramka z kamery mogła zostać zinterpretowana przez sieć neuronową, musi zostać rygorystycznie przekształcona. Potok składa się z następujących kroków (Transformacji):
+\begin{enumerate}
+    \item \textbf{LoadImages:} Pobranie pliku graficznego ze wskazanej ścieżki na dysku.
+    \item \textbf{ResizeImages:} Konwersja zdjęcia do ściśle określonych wymiarów $112 \times 112$ pikseli, gdyż taka jest rozdzielczość wejściowa warstwy wejściowej tego konkretnego modelu sieci. Parametr \textit{Fill} dba o poprawne wypełnienie ramki, zapobiegając zniekształceniom twarzy.
+    \item \textbf{ExtractPixels:} Transformacja dwuwymiarowej tablicy kolorów RGB na jednowymiarowy, znormalizowany tensor (zmiennoprzecinkowy wektor danych), który trafia pod wejście sieci jako zbiór danych oznaczony kluczem \texttt{"data"}.
+    \item \textbf{ApplyOnnxModel:} Przetworzenie znormalizowanych danych przez sieć neuronową i odebranie wyników z wyjściowej warstwy gęstej (Fully Connected Layer) o nazwie \texttt{"fc1"}.
+\end{enumerate}
+
+\section{Ekstrakcja Cech i Wektoryzacja (Embeddings)}
+Sieć neuronowa nie zwraca imienia i nazwiska. Po przetworzeniu obrazu, sieć generuje na wyjściu abstrakcyjny \textbf{Wektor Cech} (ang. \textit{Embedding}). Wektor ten, to zbiór liczb zmiennoprzecinkowych unikalnie opisujących dany profil twarzy (np. ułożenie oczu, odległość kości policzkowych, kształt żuchwy). Metoda \texttt{ExtractEmbedding} dba o pobranie tego wektora, a następnie poddaje go skrupulatnej \textbf{Normalizacji L2}. Normalizacja ma na celu ujednolicenie długości wektora do jednostkowego rozmiaru, co diametralnie ułatwia i przyspiesza późniejsze matematyczne porównania.
+
+\section{Podobieństwo Kosinusowe (Cosine Similarity)}
+Proces autoryzacji polega na sprawdzeniu "odległości" w wielowymiarowej przestrzeni pomiędzy nowo wygenerowanym wektorem ze zdjęcia logowania a zapisanymi w bazie wektorami wzorcowymi profili z pliku \texttt{FaceProfiles.json}.
+
+Użyto do tego metryki matematycznej \textbf{Podobieństwa Kosinusowego}. 
+Algorytm bada kąt zawarty pomiędzy dwoma wektorami. Im wynik jest bliższy wartości 1, tym profile są bardziej zgodne (ten sam kąt w przestrzeni cech). Im wynik bliższy 0 lub poniżej zera, tym struktury obrazu znacząco się od siebie różnią.
+
+Rozwiązanie to jest wysoce odporne na zróżnicowane nasłonecznienie, naświetlenie matrycy oraz drobne szumy tła w kadrze, co czyni aplikację gotową do działania w rzeczywistych warunkach eksploatacyjnych.

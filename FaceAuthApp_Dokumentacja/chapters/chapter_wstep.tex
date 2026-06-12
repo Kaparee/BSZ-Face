@@ -1,0 +1,22 @@
+\chapter{Wstęp}
+
+\section{Cel projektu}
+Aplikacja \textbf{FaceAuthApp} to zaawansowany system uwierzytelniania biometrycznego zaprojektowany w celu bezpiecznego i zautomatyzowanego rozpoznawania twarzy użytkowników. Głównym założeniem było zaprojektowanie oprogramowania, które zwolni użytkowników z obowiązku zapamiętywania haseł i kodów PIN, przenosząc odpowiedzialność autoryzacyjną na unikalne cechy fizjologiczne. System automatycznie analizuje strukturę twarzy, przechwytuje obraz w czasie rzeczywistym i weryfikuje tożsamość z dużą skutecznością.
+
+\section{Opis problemu i założeń}
+Problem, który rozwiązuje niniejsza aplikacja, polega na bezpiecznej identyfikacji osoby na podstawie obrazu z kamery internetowej oraz odróżnieniu rzeczywistego wizerunku od próby oszustwa (ang. \textit{spoofing}).
+\begin{itemize}
+    \item \textbf{Analizowane dane:} System przetwarza sekwencje strumieniowe wideo, analizując pojedyncze klatki obrazu RGB pozyskane ze standardowej kamery.
+    \item \textbf{Założenia systemowe:} Aplikacja została zbudowana na frameworku WPF i ma działać wydajnie w czasie rzeczywistym. System używa głębokich sieci neuronowych (ONNX) do ekstrakcji wektora cech z obrazu twarzy. Do precyzyjnej wieloklasowej identyfikacji użytkowników wbudowano klasyfikator środowiska uczenia maszynowego ML.NET (SdcaMaximumEntropy).
+    \item \textbf{Ograniczenia środowiskowe i jakość danych:} Metoda wymaga dostatecznego naświetlenia na obiekcie. Silne cienie na twarzy, ostre odblaski świetlne na okularach lub niekompletny wycinek twarzy obniżają prawdopodobieństwo pomyślnego rozpoznania.
+\end{itemize}
+
+\section{Funkcjonalności systemu}
+\begin{itemize}
+    \item \textbf{Rejestracja Profilu Biometrycznego:} Możliwość szybkiego utworzenia konta, zapisania imienia i przechwycenia referencyjnego zdjęcia twarzy z kamery lub dysku.
+    \item \textbf{Logowanie Twarzą (Face Login):} Zautomatyzowany proces weryfikacji tożsamości z wykorzystaniem zaawansowanych algorytmów uczenia maszynowego (Deep Learning).
+    \item \textbf{Anti-Spoofing (Liveness Detection):} Innowacyjny mechanizm wykrywania ataków prezentacyjnych. System na etapie logowania weryfikuje żywotność skanowanego obiektu analizując zmienność (wariancję) klatek, co uniemożliwia autoryzację za pomocą statycznego zdjęcia podsuniętego pod kamerę.
+    \item \textbf{Kontrola Bezpieczeństwa (Threshold):} Interaktywny suwak umożliwiający administratorowi płynną regulację wymaganego progu pewności (od 0\% do 100\%), po przekroczeniu którego algorytm AI uznaje logowanie za pomyślne.
+    \item \textbf{Audyt i Logowanie Zdarzeń:} Wbudowany system szczegółowego logowania do pliku \texttt{Security\_Audit.log}, dokumentujący każdy krok autoryzacji wraz z precyzyjnie wyliczonym współczynnikiem dopasowania (Score).
+    \item \textbf{Kwarantanna Intruzów:} Mechanizm automatycznego rejestrowania klatek niezidentyfikowanych użytkowników (intruzów) do bezpiecznego folderu \texttt{Zagrożenia} w celach dochodzeniowych.
+\end{itemize}

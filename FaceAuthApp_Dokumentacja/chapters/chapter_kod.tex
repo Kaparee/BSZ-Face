@@ -1,0 +1,93 @@
+\chapter{Opis Wybranych Fragmentów Kodu Źródłowego}
+
+\subsection{Budowa Sieci ML.NET (ONNX Pipeline)}
+Poniższy kod znajduje się w rdzeniu aplikacji, w pliku \texttt{FaceEngine.cs}. Demonstruje on załadowanie wielowarstwowej sieci konwolucyjnej do operacyjnej pamięci aplikacji i inicjalizację potoku, który odpowiednio formatuje obraz przed przekazaniem go do warstw wejściowych modelu (skalowanie, transformacja przestrzeni barw do wektora).
+\begin{center}
+\begin{lstlisting}[language=csh]
+private static PredictionEngine<ImageInput, ImageEmbedding> CreateEngine()
+{
+    var ml = new MLContext();
+
+    var pipeline = ml.Transforms.LoadImages(""ImageObject"", """", nameof(ImageInput.ImagePath))
+        .Append(ml.Transforms.ResizeImages(""ImageObject"", imageWidth: 112, imageHeight: 112,
+            inputColumnName: ""ImageObject"",
+            resizing: Microsoft.ML.Transforms.Image.ImageResizingEstimator.ResizingKind.Fill))
+        .Append(ml.Transforms.ExtractPixels(outputColumnName: ""data"", inputColumnName: ""ImageObject"",
+            interleavePixelColors: false, offsetImage: 0f, scaleImage: 1f))
+        .Append(ml.Transforms.ApplyOnnxModel(
+            outputColumnNames: new[] { ""fc1"" },
+            inputColumnNames: new[] { ""data"" },
+            modelFile: ModelPath));
+
+    var emptyData = ml.Data.LoadFromEnumerable(new List<ImageInput>());
+    var model = pipeline.Fit(emptyData);
+    return ml.Model.CreatePredictionEngine<ImageInput, ImageEmbedding>(model);
+}
+\end{lstlisting}
+\captionof{figure}{Algorytm pre-processingu klatek oraz wczytywanie map sieci sztucznej neuronowej ONNX.}
+\end{center}
+
+\subsection{Proces Treningu z Deduplikacją (L-BFGS)}
+Silnik trenujący ML.NET przygotowuje dane poprzez usuwanie zduplikowanych tożsamości (duplikaty z publicznych baz o odległości cosinusowej powyżej 0.92) oraz przeprowadza obfitą augmentację szumem, aby zapewnić wysoką skuteczność wieloklasowego klasyfikatora L-BFGS bez utraty cech na skutek regularyzacji.
+\begin{center}
+\begin{lstlisting}[language=csh]
+// Deduplikacja bazy
+var clean = new List<FaceProfile>();
+foreach (var p in profiles)
+{
+    bool isDuplicate = false;
+    foreach (var c in clean)
+    {
+        if (c.Name == p.Name) continue;
+        float sim = CosineSimilarity(p.Embedding, c.Embedding);
+        if (sim > 0.92f) { isDuplicate = true; break; }
+    }
+    if (!isDuplicate) clean.Add(p);
+}
+profiles = clean;
+
+// Konstrukcja modelu
+var pipeline = ml.Transforms.Conversion.MapValueToKey(""Label"")
+    .Append(ml.MulticlassClassification.Trainers.LbfgsMaximumEntropy(
+        labelColumnName: ""Label"", featureColumnName: ""Features"",
+        l1Regularization: 0f, l2Regularization: 0f))
+    .Append(ml.Transforms.Conversion.MapKeyToValue(""PredictedLabel""));
+\end{lstlisting}
+\captionof{figure}{Fragment procesu uczenia maszynowego ML.NET z zaawansowanym przygotowaniem danych.}
+\end{center}
+
+\subsection{Proces Liveness Detection w warstwie interfejsu (frontend)}
+Mechanizm chroniący przed atakiem oszustwa za pomocą statycznego zdjęcia (skonfigurowany w pliku \texttt{MainWindow.xaml.cs}). W czasie asynchronicznego skanowania, aplikacja wstrzymuje wykonanie głównego wątku co ułamek sekundy (\texttt{Task.Delay(300)}), zbierając 3 różne ujęcia z wejścia strumieniowego. Następnie na siatce pikseli sprawdza skumulowaną wariancję wektora kolorów w centralnym obszarze zdjęcia.
+\begin{center}
+\begin{lstlisting}[language=csh]
+int variance = 0;
+Bitmap[] samples = new Bitmap[3];
+for (int i = 0; i < 3; i++)
+{
+    lock (_frameLock) { if (_currentFrame != null) samples[i] = (Bitmap)_currentFrame.Clone(); }
+    await Task.Delay(300);
+}
+
+if (samples[0] != null && samples[1] != null && samples[2] != null)
+{
+    int width = samples[0].Width;
+    int height = samples[0].Height;
+    for (int pt = 0; pt < 10; pt++)
+    {
+        int px = width / 2 + pt;
+        int py = height / 2 + pt;
+        if (px < width && py < height)
+        {
+            var c1 = samples[0].GetPixel(px, py);
+            var c2 = samples[1].GetPixel(px, py);
+            var c3 = samples[2].GetPixel(px, py);
+            variance += Math.Abs(c1.R - c2.R) + Math.Abs(c2.R - c3.R);
+            variance += Math.Abs(c1.G - c2.G) + Math.Abs(c2.G - c3.G);
+            variance += Math.Abs(c1.B - c2.B) + Math.Abs(c2.B - c3.B);
+        }
+    }
+}
+if (variance < 10) isLivenessPassed = false;
+\end{lstlisting}
+\captionof{figure}{Badanie żywotności obiektu metodą analizy wariancji kanałów RGB w czasie.}
+\end{center}

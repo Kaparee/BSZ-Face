@@ -68,7 +68,9 @@
         <StackPanel x:Name="PanelMenu" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Visible">
             <TextBlock Text="Witaj w systemie. Wybierz akcję:" Foreground="#AAAAAA" FontSize="16" Margin="0,0,0,30" HorizontalAlignment="Center"/>
             <Button Content="🎥 Zaloguj się przez Kamerę" Style="{StaticResource PrimaryButton}" Width="280" Height="50" Margin="0,0,0,15" Click="ShowLoginPanel_Click"/>
-            <Button Content="📝 Zarejestruj nową osobę" Style="{StaticResource SecondaryButton}" Width="280" Height="40" Click="ShowRegisterPanel_Click"/>
+            <Button Content="📝 Zarejestruj nową osobę" Style="{StaticResource SecondaryButton}" Width="280" Height="40" Margin="0,0,0,15" Click="ShowRegisterPanel_Click"/>
+            <Button Content="📊 Ewaluacja modelu ML.NET" Style="{StaticResource SecondaryButton}" Width="280" Height="40" Margin="0,0,0,15" Click="EvaluateModel_Click"/>
+            <Button Content="📁 Hurtowy import bazy (.jpg)" Style="{StaticResource SecondaryButton}" Width="280" Height="40" Click="BulkImportBtn_Click"/>
         </StackPanel>
 
         <StackPanel x:Name="PanelLogin" VerticalAlignment="Center" Visibility="Collapsed" Margin="0,60,0,0">

@@ -1,0 +1,17 @@
+\chapter{Analiza istniejących rozwiązań}
+
+Biometria oparta na analizie twarzy jest powszechnie stosowana w systemach komercyjnych i zabezpieczeniach wysokiego szczebla. Poniżej przedstawiono trzy wybrane rozwiązania, które wyznaczają rynkowe standardy w dziedzinie uwierzytelniania na podstawie obrazu.
+
+\section{Apple Face ID}
+Face ID to autorska technologia sprzętowo-programowa firmy Apple, zintegrowana głównie z urządzeniami mobilnymi. System bazuje na rzutowaniu siatki ponad 30 tysięcy punktów w paśmie podczerwonym (TrueDepth), budując w ten sposób precyzyjną, trójwymiarową (3D) mapę twarzy. Dzięki wykorzystaniu fali podczerwieni rozwiązanie działa niezawodnie w całkowitej ciemności, co daje mu ogromną przewagę w zakresie wygody użytkowania oraz bardzo wysoki poziom zabezpieczeń przed próbami spoofingu (oszukania za pomocą wydrukowanego zdjęcia).
+
+\section{Windows Hello}
+Windows Hello to autoryzacyjny mechanizm zintegrowany z systemem operacyjnym Windows 10/11. Pozwala na logowanie do systemu komputerowego za pomocą dedykowanej kamery wspierającej standardy światła podczerwonego (IR). Rozwiązanie to również bada przestrzenną strukturę twarzy za pomocą fali niewidzialnej, odrzucając płaskie wydruki zdjęciowe. Algorytmy biometryczne Microsoftu operują na cechach strukturalnych, mierząc dystans pomiędzy specyficznymi punktami węzłowymi na twarzy użytkownika.
+
+\section{Mobilne aplikacje bankowe (Active Liveness Detection)}
+Aplikacje finansowe (np. mBank, Revolut, eDO App) przy weryfikacji tożsamości oferują uwierzytelnianie na podstawie 2D (poprzez standardową kamerę RGB smartfona). Ponieważ kamery RGB są niezwykle podatne na ataki prezentacyjne (zdjęcie wyświetlone na ekranie tabletu lub papierze), zmuszają użytkownika do wykonania specyficznej akcji -- np. mrugnięcie, obrót głową w lewo/prawo czy uśmiech (tzw. \textit{Active Liveness Detection}). Proces ten polega na badaniu reakcji behawioralnej i interakcji, potwierdzając żywotność obiektu przed autoryzacją.
+
+\section{Wskazanie nowości i specyfika FaceAuthApp}
+Na tle zaawansowanych systemów komercyjnych (które zazwyczaj wymagają drogiego i dedykowanego sprzętu jak rzutniki IR czy czujniki głębi pola przestrzennego), opracowywana aplikacja \textbf{FaceAuthApp} stanowi system czysto programowy (\textit{Software-based}), oparty w głównej mierze na bibliotece uczenia maszynowego ML.NET, pozwalając na pracę z wykorzystaniem dowolnej, uniwersalnej kamery internetowej RGB. 
+
+Istotną "nowością" oraz unikalnym detalem projektowym w stworzonym systemie jest integracja autorskiego, pasywnego algorytmu \textit{Liveness Detection}. Operuje on na naturalnej wariancji i minimalnych odchyłkach szumu cyfrowego na kolejnych klatkach obrazu. To rozwiązanie jest znacząco wygodniejsze i szybsze, gdyż zdejmuje z użytkownika obowiązek wykonywania nienaturalnych ruchów głową. Pasywne skanowanie odbywa się automatycznie w ułamku sekundy, a implementacja prawdziwego potoku klasyfikatora ML.NET (SdcaMaximumEntropy) umożliwia na płynne podłączanie wielkich zbiorów osób bez widocznej utraty wydajności rozpoznawania.

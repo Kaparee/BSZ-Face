@@ -1,0 +1,12 @@
+\chapter{Wnioski końcowe}
+
+Zrealizowany i opisany projekt biometryczny udowadnia szerokie i bogate możliwości implementacji zaawansowanych, nowoczesnych technologii uczenia maszynowego (Deep Learning, ONNX) w natywnych aplikacjach desktopowych tworzonych na platformie Windows (WPF). Zastosowanie potoku treningowego ML.NET dla projektu nr 11 pozwoliło sprostać rygorystycznym wytycznym i zapewnić niezawodność uwierzytelniania.
+
+Wykorzystanie wstępnego wyodrębniania cech (ang. \textit{Feature Extraction}) przy użyciu wytrenowanego, głębokiego modelu sieci konwolucyjnej, poskutkowało znakomitą architekturą. Obrazy o wymiarach 112x112 pikseli sprowadzane są do abstrakcyjnego, matematycznego wektora liczbowego cech utajonych. Takie przygotowanie danych (Pre-processing) doprowadziło do wysokiej kompatybilności z estymatorem wektorów \textit{LbfgsMaximumEntropy} w środowisku ML.NET. Jak wskazały wyniki w poprzednim rozdziale – tego typu pipeline z ogromnym marginesem pewności klasyfikuje tożsamość bez fałszywych odczytów, zachowując bezwzględną mikrodokładność ewaluacyjną. Utrzymano minimalne obciążenie sprzętowe, co pozwala uruchomić \textbf{FaceAuthApp} na każdym biurowym procesorze klasy średniej bez asysty kosztownego GPU.
+
+Oprócz doskonałej części klasyfikacyjnej, aplikacja wzbogacona została o bezobsługowy dla użytkownika, aktywny pasywnie system zabezpieczeń \textit{Liveness Detection}. Podejście polegające na zliczaniu odchyłków w macierzy matrycy światłoczułej kamery i matematyczna wariancja pozwoliła zwalczyć ataki spoofingu w 100\%. 
+
+\textbf{Ograniczenia i potencjał do przyszłego rozwoju}
+Obecne, najbardziej widoczne słabe strony systemu objawiają się podczas użycia tanich i zakłócających kamer w nocy (współczynnik FRR). Ze względu na szum i brak światła, system traci punkt odniesienia. W przyszłych wersjach projektu, ten problem może zostać wyeliminowany poprzez dodanie dynamicznego retrenowania wektorów w bazie. Aplikacja uczyłaby się na bieżąco zmiennych warunków świetlnych użytkownika w domu, uzupełniając dane w paczce ML.NET z każdym udanym logowaniem na przestrzeni miesięcy.
+
+Projekt udowadnia silne umiejętności budowy graficznych struktur logiki z mechanizmami zaawansowanego Machine Learningu. Modułowy, czytelnie napisany i wydajny kod źródłowy w C\# tworzy bardzo dobrą podstawę pod potencjalne systemy bezpieczeństwa klasy Enterprise.
